@@ -45,8 +45,6 @@ for index, pad in pads do
 		touchedConn = disconnect(touchedConn)
 		debounce = ost()
 		
-		local player = game:GetService("Players"):GetPlayerFromCharacter(hit.Parent)
-		
 		currentPad = PadTouched:InvokeServer(pad)
 		soundMod:PlaySound("Pads","Sound")
 	end)

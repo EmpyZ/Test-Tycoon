@@ -11,6 +11,13 @@ local nextPaymentValue = 0
 local ost = os.time
 local debouncer = 0
 
+local function addMoneyParticles(paycheckMachine)
+	local particle = game.ReplicatedStorage.Assets.Effects.Library.Confetti_1:Clone()
+	particle.Enabled = true
+	particle.Parent = paycheckMachine.ParticleAnchor
+	game:GetService("Debris"):AddItem(particle,1.25)
+end
+
 for _, paycheckMachine in paycheckMachines do
 	local pad: BasePart = paycheckMachine.PadComponents.Pad
 	
@@ -25,6 +32,7 @@ for _, paycheckMachine in paycheckMachines do
 		local paycheck, enableSound = RequestPaycheck:InvokeServer(nextPaymentValue)
 		
 		if not paycheckMachine:GetAttribute("Disabled") and enableSound then
+			addMoneyParticles(paycheckMachine)
 			SoundMod:PlaySound("JanglingCoins","COINS!!!")
 		end	
 	end)

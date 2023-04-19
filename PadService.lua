@@ -1,68 +1,82 @@
-local PadPurchase: BindableEvent = game.ReplicatedStorage.Remotes.PadPurchase
+local SoundMod = require(game.ReplicatedStorage.Modules.SoundMod)
 
-local UpdateUI: RemoteEvent = game.ReplicatedStorage.Remotes.UpdateUI
-local PadTouched: RemoteEvent = game.ReplicatedStorage.Remotes.PadTouched
+local modules = script.Parent:WaitForChild("Modules")
 
-local PlayerData = require(script.Parent.PlayerData)
+local UIActions = require(modules.UIActions)
+local BuildingVisuals = require(modules.BuildingVisuals)
+
+local player = game:GetService("Players").LocalPlayer
+
+local PlayerGui = player:WaitForChild('PlayerGui')
+local ScreenGui = PlayerGui:WaitForChild("ScreenGui")
+local HUD = ScreenGui:WaitForChild("Frame")
+local coinLabel = HUD.TextLabel
+
+local PadTouched = game.ReplicatedStorage.Remotes.PadTouched
 
 local padsFolder = workspace.Pads
 local pads = padsFolder:GetChildren()
 
-local ost = os.time
+local ost,toS,toN = os.time, tostring, tonumber
+local debounce = 0
+local currentPad = "Entrance_1"
 
-local buildingsFolder = workspace.Buildings
-buildingsFolder.Parent = game.ReplicatedStorage
-
-local function onPadTouch(player, pad, padNumber)
-	PlayerData:SubtractMoney(player, pad:GetAttribute("Price"))
-	local buildingClone = pad.Target.Value:Clone()
-	buildingClone.Parent = workspace.ClonedBuilds
-
-	pad.Skin:Destroy()
-	pad.Pad:Destroy()
-	pad.BillboardGui:Destroy()
-
-	PadPurchase:Fire(player,pad, padNumber)
+local function disconnect(touchedConn)
+	touchedConn:Disconnect()
+	touchedConn = nil
+	return touchedConn
 end
 
-local function onPadPurchased(player, pad, padNumber)
-	local message = ("Pad %s was purchased!"):format(pad.Name)
-	PlayerData:AddPadPurchased(player, padNumber)
-	--print(PlayerData:CheckPadsPurchasedTable(player))
-	UpdateUI:FireClient(player, nil, message)
+local function addFirework(pad)
+	local fireworks = game.ReplicatedStorage.Assets.Effects.Library.Fireworks_1:Clone()
+	fireworks.Enabled = true
+	fireworks.Parent = pad.PreviewArea
+	game:GetService("Debris"):AddItem(fireworks,2)
 end
 
-PadPurchase.Event:Connect(onPadPurchased)
+for index, pad in pads do
+	if pad:GetAttribute("isFinished") then return end
+	
+	local billboard = pad.BillboardGui; local bottomL = billboard:FindFirstChild("BottomLabel", true); local title = billboard:FindFirstChild("TitleLabel", true)
+	bottomL.Text = pad:GetAttribute("Price"); title.Text = string.gsub(pad.Name,"_"," ")
+	
+	local touchedConn = nil
+	local touchingArea: BasePart = pad.Pad
+	
+	touchedConn = touchingArea.Touched:Connect(function(hit)
+		if ost() - debounce < 1 then 
+			return
+		end
+		
+		local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
+		
+		if not humanoid or padsFolder[currentPad].Name ~= pad.Name or toN(coinLabel.Text) < pad:GetAttribute("Price") then
+			if not game.ReplicatedStorage.Assets.Sounds["Pads"]["Deny"].IsPlaying then
+				SoundMod:PlaySound("Pads","Deny")
+				local msg = if toN(coinLabel.Text) > pad:GetAttribute("Price") and toS(pad.Dependency.Value) == "nil" then ("You need to purchase Entrance_1 first!") else if toN(coinLabel.Text) < pad:GetAttribute("Price") then "Not enough Coins!" else ("You need to purchase %s first!"):format(toS(pad.Dependency.Value))
+				UIActions:CloneText(msg, ScreenGui, Color3.fromRGB(255, 121, 121), 1.75)
+				msg = nil
+			end	
+			return
+		end
+		
+		local padNumber = string.gsub(pad.Name,"%D","")
+		padNumber = tonumber(padNumber)
+		
+		touchedConn = disconnect(touchedConn)
+		debounce = ost()
+		
+		currentPad = PadTouched:InvokeServer(pad,padNumber)
+		padNumber = nil
+		addFirework(pad)
+		SoundMod:PlaySound("Pads","Sound")
+		SoundMod:PlaySound("Fireworks","Firework")
+	end)
+end
 
-PadTouched.OnServerInvoke = function(player, pad, padNumber)
-	local pad = padsFolder:FindFirstChild(pad.Name)
-	if not pad then return end
-	
-	local padsPurchasedHighestNumber = if table.unpack(PlayerData:CheckPadsPurchasedTable(player)) == nil then nil else 0 
-	
-	if padsPurchasedHighestNumber == 0 then
-		padsPurchasedHighestNumber = math.max(table.unpack(PlayerData:CheckPadsPurchasedTable(player)))
-		--print(padsPurchasedHighestNumber)
-		pad = padsFolder["Entrance_"..padsPurchasedHighestNumber + 1]
-	else
-		pad = padsFolder["Entrance_1"]
+workspace.ClonedBuilds.ChildAdded:Connect(function(add)
+	if script.Parent.Modules.BuildingVisuals:GetAttribute("BuildVisuals") == true then
+		task.wait()
+		BuildingVisuals:animateBuildingIn(add, TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)):Wait()
 	end	
-	
-	padsPurchasedHighestNumber = nil
-	
-	if PlayerData:GetMoney(player) < pad:GetAttribute("Price") or pad:GetAttribute("isFinished") or ost() - PlayerData:CheckDebounce(player) < 1 then return pad.Name end
-	
-	local dependency = pad.Dependency.Value
-
-	if dependency then
-		if not dependency:GetAttribute("isFinished") then return pad.Name end				
-	end
-	
-	local debounce = PlayerData:SetDebounce(player, ost())
-
-	pad:SetAttribute("isFinished", true)
-
-	onPadTouch(player, pad, padNumber)
-	
-	return pad.Next.Value
-end
+end)

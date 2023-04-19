@@ -14,3 +14,5 @@
 8. Client debouncer was added after the InvokeServer which needs to be before that line.
 9. There is no server debounce, that leaves the server trusting the client which is no good. 
 10. Not necessarily a bug, but changing the pad touched event over to the client and then sending a RE to the server may help with overall performance.
+11. Money is calculated on the client to give to the player, it's never a good idea to trust the client.
+12. The screengui was resetting on spawn which was messing with the money's amount on the client.

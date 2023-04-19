@@ -30,7 +30,7 @@ local debounce = 0
 
 UpdateUI.OnClientEvent:Connect(function(amount, msg)
 	if msg then
-		UIActions:CloneText(msg, ScreenGui, 2.75)
+		UIActions:CloneText(msg, ScreenGui, Color3.fromRGB(250, 255, 207), 2.75)
 	end
 	if amount then
 		moneyLabel.Text = tostring(amount)

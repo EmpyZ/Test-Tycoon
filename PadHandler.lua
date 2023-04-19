@@ -1,4 +1,5 @@
-local soundMod = require(game.ReplicatedStorage.Modules.SoundMod)
+local SoundMod = require(game.ReplicatedStorage.Modules.SoundMod)
+local BuildingVisuals = require(script.Parent:WaitForChild("Modules").BuildingVisuals)
 
 local player = game:GetService("Players").LocalPlayer
 
@@ -22,6 +23,12 @@ local function disconnect(touchedConn)
 	return touchedConn
 end
 
+local function addFirework(pad)
+	local fireworks = game.ReplicatedStorage.Assets.Effects.Library.Fireworks_1:Clone()
+	fireworks.Parent = pad.PreviewArea
+	game:GetService("Debris"):AddItem(fireworks,2)
+end
+
 for index, pad in pads do
 	if pad:GetAttribute("isFinished") then return end
 	
@@ -37,15 +44,28 @@ for index, pad in pads do
 		
 		if not humanoid or ost() - debounce < 1 or toN(coinLabel.Text) < pad:GetAttribute("Price") then
 			if not game.ReplicatedStorage.Assets.Sounds["Pads"]["Deny"].IsPlaying then
-				soundMod:PlaySound("Pads","Deny")
+				SoundMod:PlaySound("Pads","Deny")
 			end	
 			return
 		end
 		
+		local padNumber = string.gsub(pad.Name,"%D","")
+		padNumber = tonumber(padNumber)
+		
 		touchedConn = disconnect(touchedConn)
 		debounce = ost()
 		
-		currentPad = PadTouched:InvokeServer(pad)
-		soundMod:PlaySound("Pads","Sound")
+		currentPad = PadTouched:InvokeServer(pad,padNumber)
+		padNumber = nil
+		addFirework(pad)
+		SoundMod:PlaySound("Pads","Sound")
+		SoundMod:PlaySound("Fireworks","Firework")
 	end)
 end
+
+workspace.ClonedBuilds.ChildAdded:Connect(function(add)
+	if script.Parent.Modules.BuildingVisuals:GetAttribute("BuildVisuals") == true then
+		task.wait()
+		BuildingVisuals:animateBuildingIn(add, TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)):Wait()
+	end	
+end)

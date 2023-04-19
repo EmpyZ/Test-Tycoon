@@ -81,7 +81,17 @@ function PlayerData:SubtractMoney(player, amount)
 	UpdateUI:FireClient(player, data.money)
 end
 
-function PlayerData:CheckDebounce(player): time
+function PlayerData:CheckPadsPurchasedTable(player:Player): IntValue
+	local data = PlayerData:GetPlayerData(player)
+	return data.padsPurchased
+end
+
+function PlayerData:AddPadPurchased(player,padNumber)
+	local data = PlayerData:GetPlayerData(player)
+	table.insert(data.padsPurchased,padNumber)
+end
+
+function PlayerData:CheckDebounce(player): DateTime
 	local data = PlayerData:GetPlayerData(player)
 	return data.serverDebouncer
 end

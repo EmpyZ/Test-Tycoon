@@ -1,4 +1,4 @@
-local soundMod = require(game.ReplicatedStorage.Modules.SoundMod)
+local SoundMod = require(game.ReplicatedStorage.Modules.SoundMod)
 
 local paycheckMachinesFolder = workspace.PaycheckMachines
 local paycheckMachines = paycheckMachinesFolder:GetChildren()
@@ -22,10 +22,10 @@ for _, paycheckMachine in paycheckMachines do
 		end
 		
 		debouncer = ost()
-		local paycheck = RequestPaycheck:InvokeServer(nextPaymentValue)
-
-		if not paycheckMachine:GetAttribute("Disabled") then
-			soundMod:PlaySound("JanglingCoins","COINS!!!")
+		local paycheck, enableSound = RequestPaycheck:InvokeServer(nextPaymentValue)
+		
+		if not paycheckMachine:GetAttribute("Disabled") and enableSound then
+			SoundMod:PlaySound("JanglingCoins","COINS!!!")
 		end	
 	end)
 end

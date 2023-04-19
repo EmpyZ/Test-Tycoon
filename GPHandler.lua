@@ -18,7 +18,7 @@ function Gamepasses:PromptPurchase(player, ScreenGui, passID, passName)
 	end
 
 	if hasPass then
-		UIActions:CloneText(("You already own the %s Gamepass"):format(passName) , ScreenGui, 1.5)
+		UIActions:CloneText(("You already own the %s Gamepass"):format(passName) , ScreenGui, Color3.fromRGB(250, 255, 207), 1.5)
 	else
 		-- Player does NOT own the Pass; prompt them to purchase
 		MarketplaceService:PromptGamePassPurchase(player, passID)
